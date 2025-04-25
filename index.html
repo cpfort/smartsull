@@ -1,0 +1,95 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda de Mensagens WhatsApp</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; max-width: 600px; margin: auto; }
+    input, textarea, button { width: 100%; margin-top: 10px; padding: 10px; font-size: 16px; }
+    label { font-weight: bold; margin-top: 15px; display: block; }
+    table { width: 100%; margin-top: 30px; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background-color: #f4f4f4; }
+  </style>
+</head>
+<body>
+  <h1>📅 Agendar Mensagem WhatsApp</h1>
+
+  <form id="form">
+    <label for="cliente">Nome do Cliente</label>
+    <input type="text" id="cliente" required>
+
+    <label for="carro">Modelo do Carro</label>
+    <input type="text" id="carro" required>
+
+    <label for="phone">Telefone (com DDD e país, ex: 5511999999999)</label>
+    <input type="text" id="phone" required>
+
+    <label for="dateTime">Data e Hora</label>
+    <input type="datetime-local" id="dateTime" required>
+
+    <label for="message">Mensagem</label>
+    <textarea id="message" rows="4" required></textarea>
+
+    <button type="submit">📤 Agendar</button>
+  </form>
+
+  <h2>📋 Agendamentos</h2>
+  <table id="agendamentos">
+    <thead>
+      <tr><th>Cliente</th><th>Carro</th><th>Data/Hora</th><th>Telefone</th><th>Remover</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const form = document.getElementById('form');
+    const tabela = document.querySelector('#agendamentos tbody');
+
+    async function carregarAgendamentos() {
+      const res = await fetch('http://localhost:3001/agendamentos');
+      const dados = await res.json();
+      tabela.innerHTML = '';
+      dados.forEach(msg => {
+        const row = `<tr>
+          <td>${msg.cliente}</td>
+          <td>${msg.carro}</td>
+          <td>${new Date(msg.dateTime).toLocaleString()}</td>
+          <td>${msg.phone}</td>
+          <td><button onclick="remover(${msg.id})">❌</button></td>
+        </tr>`;
+        tabela.innerHTML += row;
+      });
+    }
+
+    async function remover(id) {
+      await fetch(`http://localhost:3001/agendamentos/${id}`, { method: 'DELETE' });
+      carregarAgendamentos();
+    }
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const data = {
+        cliente: form.cliente.value,
+        carro: form.carro.value,
+        phone: form.phone.value,
+        dateTime: form.dateTime.value,
+        message: form.message.value
+      };
+
+      await fetch('http://localhost:3001/agendamentos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      form.reset();
+      carregarAgendamentos();
+    }
+
+    carregarAgendamentos();
+  </script>
+</body>
+</html>
